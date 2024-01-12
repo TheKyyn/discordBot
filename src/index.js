@@ -1,4 +1,7 @@
-const { Client, IntentsBitField, EmbedBuilder } = require("discord.js");
+require('./src/database');
+
+const { Client, Collection, IntentsBitField } = require("discord.js");
+const fs = require('fs');
 require("dotenv").config();
 
 const client = new Client({
@@ -10,33 +13,27 @@ const client = new Client({
   ],
 });
 
-client.on("ready", (c) => {
-  console.log(`${c.user.tag} est en ligne.`);
-});
+client.commands = new Collection();
 
-client.on("messageCreate", (message) => {
-  if (message.content === "slt") {
-    message.reply("salut");
-  }
-});
+const commandFiles = fs.readdirSync('./src/commands').filter(file => file.endsWith('.js'));
 
-client.on("interactionCreate", (interaction) => {
+for (const file of commandFiles) {
+  const command = require(`./commands/${file}`);
+  client.commands.set(command.data.name, command);
+}
+
+client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
-  if (interaction.commandName === "add") {
-    const num1 = interaction.options.get("premiere-valeur").value;
-    const num2 = interaction.options.get("deuxieme-valeur").value;
+  const command = client.commands.get(interaction.commandName);
 
-    interaction.reply(`La somme des valeurs entrées est ${num1 + num2}`);
-  }
+  if (!command) return;
 
-  if (interaction.commandName === "embed") {
-    const embed = new EmbedBuilder()
-      .setTitle("Embed Title")
-      .setDescription("Ceci est un embed")
-      .setColor('Random');
-
-    interaction.reply({ embeds: [embed] });
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    console.error(error);
+    await interaction.reply({ content: 'Il y a eu une erreur en exécutant la commande!', ephemeral: true });
   }
 });
 
