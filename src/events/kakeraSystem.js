@@ -1,25 +1,26 @@
+const { Permissions } = require("discord.js");
 const { pendingDonations } = require("../database");
+const { ChannelType, PermissionsBitField } = require("discord.js");
 
 module.exports = {
   name: "messageCreate",
   async execute(message) {
     if (message.author.bot) return;
 
-    if (message.content.toLowerCase().startsWith("$give monbot")) {
-      const amount = parseInt(message.content.split(" ")[3]);
+    const giveCommandRegex = /^\$givek <@!?1106655523702575234> (\d+)$/;
 
-      // verif du montant
-      if (![200, 400, 600, 800, 1000].includes(amount)) {
+    if (giveCommandRegex.test(message.content.toLowerCase())) {
+      const amount = parseInt(message.content.match(giveCommandRegex)[1]);
+
+      if (![2, 200, 400, 600, 800, 1000].includes(amount)) {
         message.reply(
-          "Quantité invalide de kakeras. Les montants acceptés sont 200, 400, 600, 800, et 1000 kakeras, correspondant respectivement à 1, 2, 3, 4 et 5 minutes."
+          "Quantité invalide de kakeras. Les montants acceptés sont 2 (pour 30 secondes), 200, 400, 600, 800, et 1000 kakeras, correspondant respectivement à 30 secondes, 1, 2, 3, 4 et 5 minutes."
         );
         return;
       }
 
-      // durée du salon temp
       const duration = calculateDuration(amount);
 
-      // register la demande
       pendingDonations.set(message.author.id, {
         amount,
         duration,
@@ -30,43 +31,75 @@ module.exports = {
       pendingDonations.has(message.author.id)
     ) {
       const donation = pendingDonations.get(message.author.id);
+
       createTemporaryChannel(
         message.guild,
         message.author.id,
-        donation.duration * 60 * 1000
+        donation.duration * 1000
       ).then((channel) => {
-        message.channel.send(
-          `Transaction acceptée. Ton salon ${channel.name} est disponible pendant ${donation.duration} minutes.`
-        );
+        if (channel) {
+          message.channel.send(
+            `Transaction acceptée. Ton salon ${channel.name} est disponible pendant ${donation.duration} secondes.`
+          );
+        } else {
+          message.channel.send("Erreur : Impossible de créer le salon.");
+        }
       });
+      pendingDonations.delete(message.author.id);
+    } else if (
+      message.content.toLowerCase() !== "o" &&
+      pendingDonations.has(message.author.id)
+    ) {
       pendingDonations.delete(message.author.id);
     }
   },
 };
 
 function calculateDuration(amount) {
+  if (amount === 2) {
+    return 30;
+  }
   return amount / 200;
 }
 
 async function createTemporaryChannel(guild, userId, duration) {
-  const channelName = `${userId}-private-room-${duration / 60}`;
-  const channel = await guild.channels.create(channelName, {
-    type: "GUILD_TEXT",
-    permissionOverwrites: [
-      {
-        id: userId,
-        allow: ["VIEW_CHANNEL", "SEND_MESSAGES", "READ_MESSAGE_HISTORY"],
-      },
-      {
-        id: guild.id,
-        deny: ["VIEW_CHANNEL"],
-      },
-    ],
-  });
+  const uniqueId = Date.now();
+  const channelName = `privateroom-${uniqueId}`;
 
-  setTimeout(async () => {
-    await channel.delete();
-  }, duration);
+  if (!channelName || channelName.length > 100) {
+    console.error("Erreur : le nom du salon est invalide ou trop long.");
+    return null;
+  }
 
-  return channel;
+  try {
+    const channel = await guild.channels.create({
+      name: channelName,
+      type: "GUILD_TEXT",
+      permissionOverwrites: [
+        {
+          id: userId,
+          allow: [
+            PermissionsBitField.Flags.VIEW_CHANNEL,
+            PermissionsBitField.Flags.SEND_MESSAGES,
+            PermissionsBitField.Flags.READ_MESSAGE_HISTORY,
+          ],
+        },
+        {
+          id: guild.id,
+          deny: [PermissionsBitField.Flags.VIEW_CHANNEL],
+        },
+      ],
+    });
+
+    setTimeout(async () => {
+      if (channel) {
+        await channel.delete();
+      }
+    }, duration);
+
+    return channel;
+  } catch (error) {
+    console.error("Erreur lors de la création du salon :", error);
+    return null;
+  }
 }
