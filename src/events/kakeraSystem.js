@@ -1,6 +1,7 @@
 const { Permissions } = require("discord.js");
 const { pendingDonations } = require("../database");
-const { ChannelType, PermissionsBitField } = require("discord.js");
+const { PermissionsBitField } = require("discord.js");
+const { ChannelType } = require("discord.js");
 
 module.exports = {
   name: "messageCreate",
@@ -74,19 +75,19 @@ async function createTemporaryChannel(guild, userId, duration) {
   try {
     const channel = await guild.channels.create({
       name: channelName,
-      type: "GUILD_TEXT",
+      type: ChannelType.GuildText,
       permissionOverwrites: [
         {
           id: userId,
           allow: [
-            PermissionsBitField.Flags.VIEW_CHANNEL,
-            PermissionsBitField.Flags.SEND_MESSAGES,
-            PermissionsBitField.Flags.READ_MESSAGE_HISTORY,
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.SendMessages,
+            PermissionsBitField.Flags.ReadMessageHistory,
           ],
         },
         {
           id: guild.id,
-          deny: [PermissionsBitField.Flags.VIEW_CHANNEL],
+          deny: [PermissionsBitField.Flags.ViewChannel],
         },
       ],
     });
