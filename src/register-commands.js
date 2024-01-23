@@ -26,6 +26,11 @@ const commands = [
       },
     ],
   },
+  {
+    name: "info",
+    description: "Afficher les tarifs des commandes salon et snipe",
+    type: ApplicationCommandOptionType.Subcommand,
+  },
 ];
 
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
@@ -36,8 +41,8 @@ const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
     await rest.put(
       Routes.applicationGuildCommands(
-        process.env.clientId,
-        process.env.guildId
+        process.env.CLIENT_ID,
+        process.env.GUILD_ID
       ),
       { body: commands }
     );

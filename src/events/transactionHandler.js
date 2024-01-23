@@ -9,35 +9,43 @@ module.exports = {
     const giveCommandRegex = /^\$givek <@!?1106655523702575234> (\d+)$/;
     const userTransaction = pendingTransactions.get(message.author.id);
 
-    if (message.content.toLowerCase() === "o" && userTransaction) {
-      const { type, amount, duration, channelId } = userTransaction;
+    const kakerasMatch = message.content.match(giveCommandRegex);
+    if (kakerasMatch) {
+      const kakerasAmount = parseInt(kakerasMatch[1]);
+      if (userTransaction && kakerasAmount === userTransaction.amount) {
+        userTransaction.confirmedAmount = kakerasAmount;
+        pendingTransactions.set(message.author.id, userTransaction);
+      }
+      return;
+    }
 
-      const kakerasAmount = message.content.match(giveCommandRegex)?.[1];
-      if (!kakerasAmount || parseInt(kakerasAmount) !== amount) {
+    if (message.content.toLowerCase() === "o" && userTransaction) {
+      if (userTransaction.confirmedAmount === userTransaction.amount) {
+        const { type, duration } = userTransaction;
+
+        if (type === "salon") {
+          createTemporaryChannel(
+            message.guild,
+            message.author.id,
+            duration,
+            message.channel
+          );
+        } else if (type === "snipe") {
+          handleSnipe(message, duration);
+        }
+        pendingTransactions.delete(message.author.id);
+      } else {
         message.reply(
           "Quantité de kakeras incorrecte pour la transaction demandée."
         );
         pendingTransactions.delete(message.author.id);
-        return;
       }
-
-      if (type === "salon") {
-        createTemporaryChannel(
-          message.guild,
-          message.author.id,
-          duration,
-          message.channel
-        );
-      } else if (type === "snipe") {
-        handleSnipe(message, duration);
-      }
-      pendingTransactions.delete(message.author.id);
     }
   },
 };
 
 async function createTemporaryChannel(guild, userId, duration, replyChannel) {
-  const channelName = `privateroom-${userId}`;
+  const channelName = `privateroom`;
 
   try {
     const channel = await guild.channels.create({
@@ -99,7 +107,7 @@ function handleSnipe(message, duration) {
             })
             .catch(() => {
               message.channel.send(
-                "Impossible de trouver cet utilisateur dans la guilde."
+                "Impossible de trouver cet utilisateur sur le serveur."
               );
             });
         } else {
