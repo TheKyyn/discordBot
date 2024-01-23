@@ -1,22 +1,25 @@
-require("./database");
-
-const { Client, IntentsBitField } = require("discord.js");
+const { Client, GatewayIntentBits } = require("discord.js");
 require("dotenv").config();
 
 const client = new Client({
   intents: [
-    IntentsBitField.Flags.Guilds,
-    IntentsBitField.Flags.GuildMembers,
-    IntentsBitField.Flags.GuildMessages,
-    IntentsBitField.Flags.MessageContent,
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
   ],
 });
 
-const kakeraSystem = require("./events/kakeraSystem");
-client.on("messageCreate", kakeraSystem.execute);
-
-client.login(process.env.TOKEN);
-
-client.on("ready", () => {
+client.once("ready", () => {
   console.log("Le bot est bien en ligne !");
 });
+
+// Importation des gestionnaires d'événements
+const kakeraSystem = require("./events/kakeraSystem");
+const transactionHandler = require("./events/transactionHandler");
+
+// Ajout des gestionnaires d'événements
+client.on("interactionCreate", kakeraSystem.execute);
+client.on("messageCreate", transactionHandler.execute);
+
+// Connexion du bot à Discord
+client.login(process.env.TOKEN);

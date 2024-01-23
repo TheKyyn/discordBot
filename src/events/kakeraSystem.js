@@ -1,150 +1,88 @@
-const { Permissions } = require("discord.js");
-const { pendingDonations } = require("../database");
-const { PermissionsBitField, ChannelType } = require("discord.js");
+const {
+  PermissionsBitField,
+  ChannelType,
+  ApplicationCommandOptionType,
+} = require("discord.js");
+const { pendingTransactions } = require("../database");
 
 module.exports = {
-  name: "messageCreate",
-  async execute(message) {
-    if (message.author.bot) return;
+  name: "interactionCreate",
+  async execute(interaction) {
+    if (!interaction.isCommand()) return;
 
-    const giveCommandRegex = /^\$givek <@!?1106655523702575234> (\d+)$/;
-    const filter = (m) => m.author.id === message.author.id;
+    const command = interaction.commandName;
+    const user = interaction.user.id;
 
-    if (giveCommandRegex.test(message.content.toLowerCase())) {
-      const amount = parseInt(message.content.match(giveCommandRegex)[1]);
-      if (![2, 200, 400, 600, 800, 1000].includes(amount)) {
-        message.reply("Quantité invalide de kakeras...");
+    switch (command) {
+      case "salon":
+        await handleSalonCommand(interaction);
+        break;
+      case "snipe":
+        await handleSnipeCommand(interaction);
+        break;
+      default:
+        interaction.reply("Commande non reconnue.");
+    }
+
+    function calculateDuration(type, amount) {
+      const salonDurations = {
+        500: 60, // 1 minute
+        1000: 120, // 2 minutes
+        1500: 180, // 3 minutes
+        2000: 240, // 4 minutes
+        2500: 300, // 5 minutes
+      };
+      const snipeDurations = {
+        600: 60, // 60 secondes
+        3000: 300, // 5 minutes
+        5000: 600, // 10 minutes
+        8500: 3600, // 1 heure
+        25000: 86400, // 1 journée
+      };
+
+      return type === "salon" ? salonDurations[amount] : snipeDurations[amount];
+    }
+
+    async function handleSalonCommand(interaction) {
+      // Demander la durée du salon
+      const amount = interaction.options.getInteger("amount");
+      if (!Object.keys(salonDurations).includes(amount.toString())) {
+        interaction.reply("Quantité de kakeras invalide pour un salon.");
         return;
       }
 
-      const duration = calculateDuration(amount);
-      pendingDonations.set(message.author.id, {
+      const duration = calculateDuration("salon", amount);
+      pendingTransactions.set(user, {
+        type: "salon",
         amount,
         duration,
-        channelId: message.channel.id,
-        actionType: null,
+        channelId: interaction.channelId,
       });
-    } else if (
-      message.content.toLowerCase() === "o" &&
-      pendingDonations.has(message.author.id)
-    ) {
-      const donation = pendingDonations.get(message.author.id);
 
-      message
-        .reply(
-          "Souhaites-tu un salon personnalisé ou des rolls ? (**salon** / **rolls**)"
-        )
-        .then(() => {
-          message.channel
-            .awaitMessages({ filter, max: 1, time: 30000, errors: ["time"] })
-            .then((collected) => {
-              const response = collected.first().content.toLowerCase();
+      interaction.reply(
+        `Paiement de ${amount} kakeras pour un salon de ${duration} secondes attendu. Confirmez avec 'o'.`
+      );
+    }
 
-              if (response === "salon") {
-                createTemporaryChannel(
-                  message.guild,
-                  message.author.id,
-                  donation.duration * 1000
-                ).then((channel) => {
-                  if (channel) {
-                    message.channel.send(
-                      `Transaction acceptée. Ton salon ${channel.name} est disponible pendant ${donation.duration} secondes.`
-                    );
-                  } else {
-                    message.channel.send(
-                      "Erreur : Impossible de créer le salon."
-                    );
-                  }
-                });
-              } else if (response === "rolls") {
-                handleRolls(message, filter);
-              } else {
-                message.channel.send(
-                  "Réponse non reconnue. Annulation de la transaction."
-                );
-              }
+    async function handleSnipeCommand(interaction) {
+      // Demander la durée du snipe
+      const amount = interaction.options.getInteger("amount");
+      if (!Object.keys(snipeDurations).includes(amount.toString())) {
+        interaction.reply("Quantité de kakeras invalide pour un snipe.");
+        return;
+      }
 
-              pendingDonations.delete(message.author.id);
-            })
-            .catch(() => {
-              message.channel.send("Temps écoulé. Transaction annulée.");
-              pendingDonations.delete(message.author.id);
-            });
-        });
-    } else if (
-      message.content.toLowerCase() !== "o" &&
-      pendingDonations.has(message.author.id)
-    ) {
-      pendingDonations.delete(message.author.id);
+      const duration = calculateDuration("snipe", amount);
+      pendingTransactions.set(user, {
+        type: "snipe",
+        amount,
+        duration,
+        channelId: interaction.channelId,
+      });
+
+      interaction.reply(
+        `Paiement de ${amount} kakeras pour un snipe de ${duration} secondes attendu. Confirmez avec 'o'.`
+      );
     }
   },
 };
-
-function calculateDuration(amount) {
-  if (amount === 2) {
-    return 30;
-  }
-  return amount / 200;
-}
-
-async function createTemporaryChannel(guild, userId, duration) {
-  const channelName = `privateroom`;
-
-  try {
-    const channel = await guild.channels.create({
-      name: channelName,
-      type: ChannelType.GuildText,
-      permissionOverwrites: [
-        {
-          id: userId,
-          allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages,
-            PermissionsBitField.Flags.ReadMessageHistory,
-          ],
-        },
-        {
-          id: guild.id,
-          deny: [PermissionsBitField.Flags.ViewChannel],
-        },
-      ],
-    });
-
-    setTimeout(async () => {
-      if (channel) {
-        await channel.delete();
-      }
-    }, duration);
-
-    return channel;
-  } catch (error) {
-    console.error("Erreur lors de la création du salon :", error);
-    return null;
-  }
-}
-
-function handleRolls(message, filter) {
-  message.channel
-    .send("Choisis le type de message : $ha, wa, ou $ma")
-    .then(() => {
-      message.channel
-        .awaitMessages({ filter, max: 1, time: 30000, errors: ["time"] })
-        .then((collected) => {
-          const rollType = collected.first().content.toLowerCase();
-          if (["$ha", "wa", "$ma"].includes(rollType)) {
-            for (let i = 0; i < 10; i++) {
-              setTimeout(() => {
-                message.channel.send(rollType);
-              }, 2000 * i);
-            }
-          } else {
-            message.channel.send(
-              "Type de message non reconnu. Annulation de la transaction."
-            );
-          }
-        })
-        .catch(() => {
-          message.channel.send("Temps écoulé. Transaction annulée.");
-        });
-    });
-}

@@ -1,3 +1,3 @@
-const pendingDonations = new Map();
+const pendingTransactions = new Map();
 
-module.exports = { pendingDonations };
+module.exports = { pendingTransactions };

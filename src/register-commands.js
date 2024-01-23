@@ -3,27 +3,29 @@ require("dotenv").config();
 
 const commands = [
   {
-    name: "add",
-    description: "Calcul la somme des valeurs entrées",
+    name: "salon",
+    description: "Créer un salon temporaire",
     options: [
       {
-        name: "premiere-valeur",
-        description: "Première valeur :",
-        type: ApplicationCommandOptionType.Number,
-        required: true,
-      },
-      {
-        name: "deuxieme-valeur",
-        description: "Deuxième valeur :",
-        type: ApplicationCommandOptionType.Number,
+        name: "amount",
+        description: "Montant des kakeras pour le salon",
+        type: ApplicationCommandOptionType.Integer,
         required: true,
       },
     ],
   },
   {
-    name: "embed",
-    description: "Envoie un message 'embed'.",
-  }
+    name: "snipe",
+    description: "Exclure un utilisateur temporairement",
+    options: [
+      {
+        name: "amount",
+        description: "Montant des kakeras pour le snipe",
+        type: ApplicationCommandOptionType.Integer,
+        required: true,
+      },
+    ],
+  },
 ];
 
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
