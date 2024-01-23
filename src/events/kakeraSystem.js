@@ -18,7 +18,7 @@ const snipeDurations = {
   3000: 300, // 5 minutes
   5000: 600, // 10 minutes
   8500: 3600, // 1 heure
-  25000: 86400, // 1 journée
+  25000: 86400, // 24 heures
 };
 
 module.exports = {
