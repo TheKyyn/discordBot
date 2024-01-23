@@ -94,18 +94,18 @@ module.exports = {
 Lorsque la commande **/salon** est effectuée, il faudra d'abord rentrer la valeur en kakeras que tu souhaites payer en fonction de la durée que tu souhaites attribuer à ton salon temporaire. Voici les tarifs : 
 
 - 500 kakeras pour 60 secondes
-- 1000 kakeras pour 120 secondes
-- 1500 kakeras pour 180 secondes
-- 2000 kakeras pour 240 secondes
-- 2500 kakeras pour 300 secondes
+- 1000 kakeras pour 2 minutes
+- 1500 kakeras pour 3 minutes
+- 2000 kakeras pour 4 minutes
+- 2500 kakeras pour 5 minutes
 
 Lorsque la commande **/snipe** est effectuée, il faudra d'abord rentrer la valeur en kakeras que tu souhaites payer en fonction de la durée de l'exclusion que tu souhaites infliger. Voici les tarifs : 
 
 - 600 kakeras pour une exclusion de 60 secondes
-- 3000 kakeras pour une exclusion de 300 secondes
-- 5000 kakeras pour une exclusion de 600 secondes
-- 8500 kakeras pour une exclusion de 3600 secondes
-- 25000 kakeras pour une exclusion de 86400 secondes
+- 3000 kakeras pour une exclusion de 5 minutes
+- 5000 kakeras pour une exclusion de 10 minutes
+- 8500 kakeras pour une exclusion de 1 heure
+- 25000 kakeras pour une exclusion de 24 heures
 
 **Attention** : tenter un paiement de n'importe quelle autre valeur que celles affichées ci-dessus entraînera une annulation de la transaction.`;
 
