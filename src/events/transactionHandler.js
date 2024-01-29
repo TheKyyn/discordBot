@@ -21,7 +21,7 @@ module.exports = {
 
     if (message.content.toLowerCase() === "o" && userTransaction) {
       if (userTransaction.confirmedAmount === userTransaction.amount) {
-        const { type, duration } = userTransaction;
+        const { type, duration, kakeraValue } = userTransaction;
 
         if (type === "salon") {
           createTemporaryChannel(
@@ -32,7 +32,10 @@ module.exports = {
           );
         } else if (type === "snipe") {
           handleSnipe(message, duration);
+        } else if (type === "sell") {
+          handleSellTransaction(message, userTransaction);
         }
+
         pendingTransactions.delete(message.author.id);
       } else {
         message.reply(
@@ -45,7 +48,7 @@ module.exports = {
 };
 
 async function createTemporaryChannel(guild, userId, duration, replyChannel) {
-  const channelName = `privateroom`;
+  const channelName = `privateroom-${userId}`;
 
   try {
     const channel = await guild.channels.create({
@@ -96,26 +99,24 @@ function handleSnipe(message, duration) {
             .then((member) => {
               member
                 .timeout(duration * 1000, "Sniped")
-                .then(() => {
-                  message.channel.send(`Comme si c'était fait. Touché.`);
-                })
-                .catch((error) => {
+                .then(() =>
+                  message.channel.send(`Comme si c'était fait. Touché.`)
+                )
+                .catch((error) =>
                   message.channel.send(
                     `Erreur lors du snipe : ${error.message}`
-                  );
-                });
+                  )
+                );
             })
-            .catch(() => {
+            .catch(() =>
               message.channel.send(
-                "Impossible de trouver cet utilisateur sur le serveur."
-              );
-            });
+                "Impossible de trouver cet utilisateur dans la guilde."
+              )
+            );
         } else {
           message.channel.send("Aucun joueur ciblé. Annulation du snipe.");
         }
       })
-      .catch(() => {
-        message.channel.send("Temps écoulé. Transaction annulée.");
-      });
+      .catch(() => message.channel.send("Temps écoulé. Transaction annulée."));
   });
 }

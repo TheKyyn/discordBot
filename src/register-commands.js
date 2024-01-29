@@ -31,6 +31,41 @@ const commands = [
     description: "Afficher les tarifs des commandes salon et snipe",
     type: ApplicationCommandOptionType.Subcommand,
   },
+  {
+    name: "market",
+    description: "Ajouter un personnage au marché",
+    options: [
+      {
+        name: "character",
+        description: "Nom du personnage à mettre sur le marché",
+        type: ApplicationCommandOptionType.String,
+        required: true,
+      },
+      {
+        name: "exchange",
+        description: "Personnage ou série souhaitée en échange",
+        type: ApplicationCommandOptionType.String,
+        required: false,
+      },
+    ],
+  },
+  {
+    name: "showmarket",
+    description: "Afficher les personnages disponibles sur le marché",
+    type: ApplicationCommandOptionType.Subcommand,
+  },
+  {
+    name: "removemarket",
+    description: "Retirer un personnage du marché",
+    options: [
+      {
+        name: "character",
+        description: "Nom du personnage à retirer du marché",
+        type: ApplicationCommandOptionType.String,
+        required: true,
+      },
+    ],
+  },
 ];
 
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
